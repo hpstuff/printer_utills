@@ -13,7 +13,7 @@ class PrinterUtils {
     return PrinterUtilsPlatform.instance.isOpen();
   }
 
-  Future<void> write(List<int> data) {
+  Future<void> write(String data) {
     return PrinterUtilsPlatform.instance.write(data);
   }
 

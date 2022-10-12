@@ -47,16 +47,17 @@ void PrinterUtilsPlugin::HandleMethodCall(
     auto args = std::get<flutter::EncodableMap>(*method_call.arguments());
     std::string printerName = std::get<std::string>(args[flutter::EncodableValue::EncodableValue("name")]);
     BOOL bStatus = FALSE;
-    PRINTER_DEFAULTS* pDefault = new PRINTER_DEFAULTS();
+    PRINTER_DEFAULTSA* pDefault = new PRINTER_DEFAULTSA();
     pDefault->DesiredAccess = PRINTER_ALL_ACCESS;
 
-    bStatus = OpenPrinterA(const_cast<char*>(printerName.c_str()), &hPrinter, NULL);
+
+    bStatus = OpenPrinterA(const_cast<char*>(printerName.c_str()), &hPrinter, pDefault);
     result->Success(flutter::EncodableValue(bStatus == TRUE ? true: false));
   } else if (method_name.compare("isOpen") == 0) {
-      DWORD cbNeeded;
+      DWORD bytesRead;
       byte data[128];
 
-      DWORD res = GetPrinterDataW(hPrinter, (wchar_t*)L"NLMOpenDoc", nullptr, data, sizeof(data), &cbNeeded);
+      DWORD res = GetPrinterDataW(hPrinter, (wchar_t*)L"NLMOpenDoc", nullptr, data, sizeof(data), &bytesRead);
       if (res == 0 && isPartOf((char*)data, (char*)"NLMOpenOk")) {
           result->Success(flutter::EncodableValue(true));
       }
@@ -66,11 +67,12 @@ void PrinterUtilsPlugin::HandleMethodCall(
   }
   else if (method_name.compare("write") == 0) {
       auto args = std::get<flutter::EncodableMap>(*method_call.arguments());
-      auto value = std::get<std::vector<uint8_t>>(args[flutter::EncodableValue::EncodableValue("value")]);
-      std::wstring prefix = L"NLMPassThrough";
+      //auto value = std::get<std::vector<uint8_t>>(args[flutter::EncodableValue::EncodableValue("value")]);
+      auto value = std::get<std::string>(args[flutter::EncodableValue::EncodableValue("value")]);
+      //std::wstring prefix = L"NLMPassThrough";
+      std::wstring prefix = L"NLMPassFileThrough";
 
       std::wstring s_message(value.begin(), value.end());
-
       //char* s_message = new char[value.size()];
       //std::copy(value.begin(), value.end(), s_message);
       std::wstring property = prefix + s_message;
@@ -81,12 +83,14 @@ void PrinterUtilsPlugin::HandleMethodCall(
       
       //strcat_s(property, strlen(s_message) + 1, s_message);
 
-      std::string data_message(value.begin(), value.end());
+      //std::string data_message(value.begin(), value.end());
 
       DWORD written;
-      LPBYTE message = (LPBYTE)const_cast<char*>(&data_message[0]);
-
-      DWORD res = GetPrinterDataW(hPrinter, (wchar_t*)w_property, nullptr, message, static_cast<DWORD>(value.size()), &written);
+      //LPBYTE message = (LPBYTE)const_cast<char*>(&data_message[0]);
+      DWORD dataLength = 128;
+      BYTE data[128];
+      OutputDebugString(w_property);
+      DWORD res = GetPrinterDataW(hPrinter, (wchar_t*)w_property, nullptr, data, dataLength, &written);
       if (res == ERROR_SUCCESS) {
           result->Success(nullptr);
       }
@@ -99,14 +103,10 @@ void PrinterUtilsPlugin::HandleMethodCall(
       wchar_t* property = L"NLMReadData";
 
       DWORD readed;
+      //DWORD toRead = 1280;
       BYTE readData[1280];
 
-      DWORD res = GetPrinterDataW(hPrinter, property, NULL, NULL, 0, &readed);
-      if (res == ERROR_MORE_DATA) {
-          BYTE pData[sizeof(readed)];
-          res = GetPrinterDataW(hPrinter, property, NULL, pData, readed, &readed);
-          OutputDebugString(L"Test");
-      }
+      DWORD res = GetPrinterDataW(hPrinter, property, NULL, readData, sizeof(readData), &readed);
 
       char* c_data = (char*)readData;
       //char* c_data = new char[readed];

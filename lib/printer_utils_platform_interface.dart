@@ -35,7 +35,7 @@ abstract class PrinterUtilsPlatform extends PlatformInterface {
     throw UnimplementedError('isOpen() has not been implemented.');
   }
 
-  Future<void> write(List<int> data) {
+  Future<void> write(String data) {
     throw UnimplementedError('write() has not been implemented.');
   }
 

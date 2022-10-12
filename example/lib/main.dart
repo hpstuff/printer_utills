@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:printer_utils/printer_utils.dart';
 import 'package:printer_utils_example/ep_patcher.dart';
 
@@ -44,15 +46,24 @@ class _MyAppState extends State<MyApp> {
         final isConnectionOpen = await _printerUtilsPlugin.isOpen();
         print("isConnectionOpen: $isConnectionOpen");
         if (isOpen && isConnectionOpen) {
-          await _printerUtilsPlugin.write(utf8.encode('{}{"appl.name":"null"}'));
+          Directory tempDir = await getTemporaryDirectory();
+          String tempPath = tempDir.path;
+          final file = File('$tempPath\\_zsdk_._zsdk_');
+          await file.writeAsBytes(utf8.encode('{}{"device.languages":"null"}'));
+          print("file path: ${file.absolute.path}");
+          await _printerUtilsPlugin.write(file.absolute.path);
           print("message sended to the printer");
+          // final data = await _printerUtilsPlugin.read();
+          // print(data);
           int res = 0;
           do {
             final data = await _printerUtilsPlugin.read();
             print(data);
+            print(utf8.decode(data?["data"], allowMalformed: true));
             res = data?["res"];
           } while (res == 2);
           await _printerUtilsPlugin.close();
+          ep.Cleanup(handle);
         } else {
           print("is connection not open");
         }

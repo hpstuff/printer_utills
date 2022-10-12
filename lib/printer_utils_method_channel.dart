@@ -27,7 +27,7 @@ class MethodChannelPrinterUtils extends PrinterUtilsPlatform {
   }
 
   @override
-  Future<void> write(List<int> data) async {
+  Future<void> write(String data) async {
     await methodChannel.invokeMethod('write', {"value": data});
   }
 
